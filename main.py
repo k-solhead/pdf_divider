@@ -199,7 +199,7 @@ if st.session_state["num_pages"] > 0:
         )
 
         if do_extract and pages_to_extract and not bad:
-            extracted_name = f"{st.session_state['file_name']}_chk.pdf"
+            extracted_name = f"{st.session_state['file_name']}_processed.pdf"
             output_pdf = os.path.join("/tmp", extracted_name)
 
             try:

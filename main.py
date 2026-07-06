@@ -1,4 +1,5 @@
 import base64
+import datetime
 import html
 import importlib
 import hashlib
@@ -9,6 +10,47 @@ import tempfile
 import fitz   # PyMuPDF
 import streamlit as st
 import streamlit.components.v1 as components
+
+
+# ── アクセスログ・カウンター ──
+LOG_FILE = os.path.join(tempfile.gettempdir(), "pdf_extractor_log.json")
+
+
+def load_log() -> dict:
+    """JSON からログデータを読み込む（なければ初期値を返す）"""
+    if os.path.exists(LOG_FILE):
+        try:
+            with open(LOG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"access_count": 0, "download_count": 0, "history": []}
+
+
+def save_log(data: dict) -> None:
+    """ログデータを JSON に書き込む"""
+    with open(LOG_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def increment_access() -> dict:
+    """アクセスカウントを +1 し、履歴に記録する"""
+    data = load_log()
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data["access_count"] += 1
+    data["history"].append({"type": "access", "time": now})
+    save_log(data)
+    return data
+
+
+def increment_download() -> dict:
+    """ダウンロードカウントを +1 し、履歴に記録する"""
+    data = load_log()
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data["download_count"] += 1
+    data["history"].append({"type": "download", "time": now})
+    save_log(data)
+    return data
 
 
 def get_sortable_multiselect():
@@ -350,6 +392,12 @@ def parse_text(text, max_pages):
 
 st.set_page_config(page_title="PDF Extractor v2", page_icon="pdf", layout="wide")
 
+# ── アクセスログ（コンソールのみ） ──
+log_data = increment_access()
+print(f"[ACCESS] {log_data['history'][-1]['time']} | "
+      f"total_access={log_data['access_count']} "
+      f"total_download={log_data['download_count']}")
+
 if "num_pages" not in st.session_state:
     st.session_state["num_pages"] = 0
 if "file_name" not in st.session_state:
@@ -508,18 +556,28 @@ if st.session_state["num_pages"] > 0:
                 with open(output_pdf, "rb") as dl:
                     st.session_state["download_pdf_data"] = dl.read()
                 st.session_state["download_pdf_name"] = extracted_name
+                # ── ダウンロードカウント ──
+                dl_data = increment_download()
+                print(f"[DOWNLOAD] {dl_data['history'][-1]['time']} | "
+                      f"total_download={dl_data['download_count']} "
+                      f"total_access={dl_data['access_count']}")
                 st.success(f"PDFを作成しました ({len(deduped)}ページ)")
             except Exception as exc:
                 st.error(f"エラーが発生しました:{exc}")
 
     if "download_pdf_data" in st.session_state:
-        st.download_button(
+        if st.download_button(
             label="PDFをダウンロード",
             data=st.session_state["download_pdf_data"],
             file_name=st.session_state["download_pdf_name"],
             mime="application/pdf",
             use_container_width=True,
-        )
+            key="download_btn",
+        ):
+            dl_data = increment_download()
+            print(f"[DOWNLOAD] {dl_data['history'][-1]['time']} | "
+                  f"total_download={dl_data['download_count']} "
+                  f"total_access={dl_data['access_count']}")
 
     # ── Sidebar │───────────────────────────
     with st.sidebar:

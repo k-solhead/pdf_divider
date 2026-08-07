@@ -54,7 +54,7 @@ if "num_pages" not in st.session_state:
 if "file_name" not in st.session_state:
     st.session_state["file_name"] = ""
 
-st.title("PDFページ抽出ツール v2")
+st.title("PDFページ抽出ツール")
 st.caption("3つの入力方法から選べ、好きな順番でページを抽出できます。")
 
 uploaded_file = st.file_uploader("PDFファイルをアップロード", type=["pdf"])
@@ -223,7 +223,7 @@ if st.session_state["num_pages"] > 0:
     # ── Sidebar │───────────────────────────
     with st.sidebar:
         st.info(
-            "PDFページ抽出ツール v2\n\n"
+            "PDFページ抽出ツール \n\n"
             "1. 連続範囲\n"
             "2. ドラッグで順序変更\n"
             "3. テキスト手入力"

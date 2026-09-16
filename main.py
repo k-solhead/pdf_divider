@@ -553,9 +553,8 @@ if st.session_state["num_pages"] > 0:
 
             try:
                 extract_pages(st.session_state["temp_path"], output_pdf, deduped)
-                with open(output_pdf, "rb") as dl:
-                    st.session_state["download_pdf_data"] = dl.read()
-                st.session_state["download_pdf_name"] = extracted_name
+                st.session_state["download_path"] = output_pdf
+                st.session_state["download_name"] = extracted_name
                 # ── ダウンロードカウント ──
                 dl_data = increment_download()
                 print(f"[DOWNLOAD] {dl_data['history'][-1]['time']} | "
@@ -565,11 +564,11 @@ if st.session_state["num_pages"] > 0:
             except Exception as exc:
                 st.error(f"エラーが発生しました:{exc}")
 
-    if "download_pdf_data" in st.session_state:
+    if "download_path" in st.session_state:
         if st.download_button(
             label="PDFをダウンロード",
-            data=st.session_state["download_pdf_data"],
-            file_name=st.session_state["download_pdf_name"],
+            data=open(st.session_state["download_path"], "rb").read(),
+            file_name=st.session_state["download_name"],
             mime="application/pdf",
             use_container_width=True,
             key="download_btn",
